@@ -1,6 +1,6 @@
 # NearestFriend-Server
 
-## This project is a part of CS492 project (NearestFriend)
+This project is a part of CS492 project (NearestFriend)
 
 ## Dependencies
   - Mongoose: mongoose depends on kerberos, we will talk about how to install kerberos into your system
