@@ -26,15 +26,15 @@ module.exports = function(app, passport) {
   // friend request
   app.post('/api/friendRequest', function(req,res) {
     var data = req.body;
-    var query = {username: data.username};
+    var query = {'username': data.username};
     User.findOne( query, function(err, user){
       if(err) {
         console.log(err);
         res.json({"status": 404});
       } else {
-        var requestQuery = {username: data.request_username};
+        var requestQuery = {'username': data.request_username};
         User.findOne( requestQuery, function(err, requestUser){
-          if(err) {
+          if(requestUser === null) {
             console.log(err);
             res.json({"status": 404});
           } else {
@@ -53,18 +53,46 @@ module.exports = function(app, passport) {
     });
   }); 
 
+  // get pending requests
+  app.post('/api/friendPendingRequests', function(req, res) {
+    var data = req.body;
+    var query = {'username' : data.username};
+    console.log(query);
+    User.findOne(query, function(err, user) {
+      if(user === null) {
+        res.json({"status": 404});
+      } else {
+        user.getPendingFriends(user._id, function(err, pendings) {
+          if(err) {
+            console.log(err);
+            res.json({"status": 404});
+          } else {
+            console.log("request", pendings);
+            sendData = {"status": 200, "pendings": []};
+            for(var i=0; i<pendings.length; i++) {
+              person = {};
+              person.username = pendings[i].username;
+              sendData.pendings.push(person);
+            }
+            res.json(sendData);
+          }
+        });
+      }
+    });
+  });
+
   // friend accept
   app.post('/api/friendAccept', function(req,res) {
     var data = req.body;
-    var query = {username: data.username};
+    var query = {'username': data.username};
     User.findOne(query, function(err, user) {
-      if(err) {
+      if(user === null) {
         console.log(err);
         res.json({"status": 404});
       } else {
-        var requestQuery = {username: data.request_username};
+        var requestQuery = {'username': data.request_username};
         User.findOne(requestQuery, function(err, requestUser) {
-          if(err) {
+          if(requestUser === null) {
             console.log(err);
             res.json({"status": 404});
           } else {
@@ -86,15 +114,15 @@ module.exports = function(app, passport) {
   // friend deny
   app.post('/api/friendDeny', function(req,res) {
     var data = req.body;
-    var query = {username: data.username};
+    var query = {'username': data.username};
     User.findOne(query, function(err, user) {
-      if(err) {
+      if(user === null) {
         console.log(err);
         res.json({"status": 404});
       } else {
-        var requestQuery = {username: data.request_username};
+        var requestQuery = {'username': data.request_username};
         User.findOne(requestQuery, function(err, requestUser) {
-          if(err) {
+          if(requestUser === null) {
             console.log(err);
             res.json({"status": 404});
           } else {
@@ -116,9 +144,9 @@ module.exports = function(app, passport) {
   // get friends
   app.post('/api/getFriends', function(req, res) {
     var data = req.body;
-    var query = {username: data.username};
+    var query = {'username': data.username};
     User.findOne(query, function(err, user) {
-      if(err) {
+      if(user === null) {
         console.log(err);
         res.json({"status": 404});
       } else {
@@ -144,9 +172,9 @@ module.exports = function(app, passport) {
   // get friends of frineds
   app.post('/api/getFriendsOfFriends', function(req, res) {
     var data = req.body;
-    var query = {username: data.username};
+    var query = {'username': data.username};
     User.findOne(query, function(err, user) {
-      if(err) {
+      if(user === null) {
         console.log(err);
         res.json({"status": 404});
       } else {
@@ -168,6 +196,4 @@ module.exports = function(app, passport) {
       }
     });
   });
-
-
 };
