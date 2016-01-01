@@ -1,6 +1,7 @@
 // Set up
 var express = require('express');
 var mongoose = require('mongoose');
+var friendOfFriends = require('friends-of-friends')(mongoose);
 var passport = require('passport');
 var morgan = require('morgan');
 var cookieParser = require('cookie-parser');
@@ -19,7 +20,7 @@ app.use(bodyParser.urlencoded({
   extended: true
 }));
 
-app.use(session({ secret: 'your-session-key', resave: true, saveUninitialized: true }));
+app.use(session({ secret: 'your-secret-key', resave: true, saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
 

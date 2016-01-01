@@ -19,14 +19,14 @@ module.exports = function(passport) {
     passReqToCallback: true
   }, function(req, username, password, done){
     process.nextTick(function() {
-      User.findOne({ 'local.username': username }, function(err, user) {
+      User.findOne({ 'username': username }, function(err, user) {
         if(err) return done(err);
         if(user) {
           return done(null, false);
         } else {
           var newUser = new User();
-          newUser.local.username = username;
-          newUser.local.password = newUser.generateHash(password);
+          newUser.username = username;
+          newUser.password = newUser.generateHash(password);
 
           newUser.save(function(err){
             if(err) 
@@ -43,7 +43,7 @@ module.exports = function(passport) {
     passwordField: 'password',
     passReqToCallback: true
   }, function(req, username, password, done){
-    User.findOne({'local.username': username}, function(err, user){
+    User.findOne({'username': username}, function(err, user){
       if (err) return done(err);
       if (!user) return done(null, false);
       if (!user.validPassword(password)) return done(null, false);
