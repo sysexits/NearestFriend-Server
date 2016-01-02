@@ -8,13 +8,18 @@ var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
 var friendOfFriends = require('friends-of-friends')(mongoose, options);
 
+var chatroomSchema = require('./chatroom.js');
+
 var Schema = mongoose.Schema;
 var userSchema = new Schema({
   username: String,
   password: String,
+  realname: String,
+  picture: String,
   latitude: Number,
   longitude: Number,
-  status: String
+  status: Number,
+  subscription: [chatroomSchema]
 }, {collection: 'nfdb_test'});
 
 userSchema.plugin(friendOfFriends.plugin, options);

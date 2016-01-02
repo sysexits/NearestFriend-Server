@@ -10,6 +10,9 @@ var session = require('express-session');
 
 var app = express();
 var port = 8000;
+if (process.argv.length == 3) {
+  port = process.argv[2];
+}
 
 var database = require('./config/database.js');
 
@@ -20,7 +23,7 @@ app.use(bodyParser.urlencoded({
   extended: true
 }));
 
-app.use(session({ secret: 'your-secret-key', resave: true, saveUninitialized: true }));
+app.use(session({ secret: '9d4b6a8cd7a352a12996d7d6be2fff56781b122744a81cfd518734373610ee58', resave: true, saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
 
