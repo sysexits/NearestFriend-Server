@@ -1,7 +1,7 @@
 var options = {
   personModelName: 'User',
   friendshipModelName: 'Friendship',
-  friendshipCollectionName: 'nfdb_test_relationship'
+  friendshipCollectionName: 'friendships'
 }
 
 var mongoose = require('mongoose');

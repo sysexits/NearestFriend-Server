@@ -7,6 +7,7 @@ var morgan = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var Stomp = require('stompjs');
 
 var app = express();
 var port = 8000;

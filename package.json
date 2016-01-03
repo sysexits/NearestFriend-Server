@@ -30,8 +30,8 @@
     "cookie-parser": "~1.4.0",
     "method-override": "~2.3.5",
     "express-session": "~1.12.1",
+    "stompjs": "~2.3.3",
     "geolib": "~2.0.18",
-    "Faker": "~0.7.2",
     "async": "~1.5.0"
   }
 }

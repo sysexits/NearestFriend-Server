@@ -189,6 +189,7 @@ module.exports = function(app, passport) {
               person.latitude = friends[i].latitude;
               person.longitude = friends[i].longitude;
               person.status = friends[i].status;
+              person.picture = friends[i].picture;
               sendData.friends.push(person); 
             }
             res.json(sendData);
@@ -222,6 +223,7 @@ module.exports = function(app, passport) {
               person.latitude = fof[i].latitude;
               person.longitude = fof[i].longitude;
               person.status = fof[i].status;
+              person.picture = fof[i].picture;
               sendData.friendsOfFriends.push(person); 
             }
             res.json(sendData);
@@ -232,9 +234,8 @@ module.exports = function(app, passport) {
   });
 
   app.post('/api/getPeople', function(req, res) {
-    var data = req.data;
+    var data = req.body;
     var query = {'username': data.username};
-    var getAll = [];
     User.findOne(query, function(err, user){
       if(err) {
         console.log(err);
@@ -242,38 +243,44 @@ module.exports = function(app, passport) {
       } else if(!user) {
         res.json({'status': 404});
       } else {
+        res.locals.getAll = [];
         user.getFriends(function(err, friends) {
           if(err) {
             console.log(err);
             res.json({"status": 304});
             return;
           } else {
-            console.log('friends', friends);
             for(var i=0; i<friends.length; i++) {
-              if(friends[i].status == data.status && geolib.getDistance({latitude: data.latitude, longitude: data.longitude}, {latitude: friends[i].latitude, longitude:friends[i].longitude}) <= data.length) {
+              if(friends[i].status == data.status && geolib.getDistance({latitude: data.latitude, longitude: data.longitude}, {latitude: friends[i].latitude, longitude:friends[i].longitude}) <= data.distance) {
                 person = {};
                 person.username = friends[i].username;
-                getAll.push(person);
+                person.picture = friends[i].picture;
+                person.latitude = friends[i].latitude;
+                person.longitude = friends[i].longitude;
+                res.locals.getAll.push(person);
               }
             }
+
+            user.getFriendsOfFriends(function(err, fof) {
+              if(err) {
+                res.json({'status': 304});
+                return;
+              } else {
+                for(var i=0; i<fof.length; i++) {
+                  if(fof[i].status == data.status && geolib.getDistance({latitude: data.latitude, longitude:data.longitude}, {latitude:fof[i].latitude, longitude:fof[i].longitude})<= data.distance) {
+                    person = {};
+                    person.username = fof[i].username;
+                    person.picture = fof[i].picture;
+                    person.latitude = fof[i].latitude;
+                    person.longitude = fof[i].longitude;
+                    res.locals.getAll.push(person);
+                  } 
+                } 
+                res.json({"status": 200, "getPeople": res.locals.getAll});
+              }
+            });
           }
         });
-        user.getFriendsOfFriends(function(err, fof) {
-          if(err) {
-            console.log(err);
-            res.json({'status': 304});
-            return;
-          } else {
-            for(var i=0; i<fof.length; i++) {
-              if(fof[i].status == data.status && geolib.getDistance({latitude: data.latitude, longitude:data.longitude}, {latitude:fof[i].latitude, longitude:fof[i].longitude})) {
-                person = {};
-                person.username = fof[i].username;
-                getAll.push(person);
-              } 
-            } 
-          }
-        });
-        res.json({'status': 200, 'data': getAll})
       }
     }) 
   });
