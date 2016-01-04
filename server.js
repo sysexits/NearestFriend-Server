@@ -28,8 +28,20 @@ app.use(session({ secret: '9d4b6a8cd7a352a12996d7d6be2fff56781b122744a81cfd51873
 app.use(passport.initialize());
 app.use(passport.session());
 
+var client = Stomp.overWS('ws://localhost:61623');
+
+var connect_callback = function(frame) {
+  console.log(frame);
+}
+
+var error_callback = function(err) {
+  console.log(err);
+}
+
+client.connect("admin", "apollo@1876", connect_callback, error_callback);
+
 require('./config/passport')(passport);
-require('./app/routes.js')(app, passport);
+require('./app/routes.js')(app, passport, client);
 
 var server = app.listen(port, function(err) {
   if(err) throw err;

@@ -2,7 +2,7 @@ var User = require('./models/user.js');
 var Chatroom = require('./models/chatroom.js');
 var geolib = require('geolib');
 
-module.exports = function(app, passport) {
+module.exports = function(app, passport, client) {
   
   app.get('/success', function(req, res){
     res.json({'status': 200});
@@ -84,11 +84,13 @@ module.exports = function(app, passport) {
             res.json({"status": 500});
           } else {
             console.log("request", pendings);
-            sendData = {"status": 200, "pendings": []};
+            sendData = {"status": 200, "friendPendingRequests": []};
             for(var i=0; i<pendings.length; i++) {
               person = {};
               person.username = pendings[i].username;
-              sendData.pendings.push(person);
+              person.realname = pendings[i].realname;
+              person.picture  = pendings[i].picture;
+              sendData.friendPendingRequests.push(person);
             }
             res.json(sendData);
           }
@@ -182,15 +184,16 @@ module.exports = function(app, passport) {
             res.json({"status": 304});
           } else {
             console.log('friends', friends);
-            sendData = {"status": 200, "friends": []};
+            sendData = {"status": 200, "getFriends": []};
             for(var i=0; i < friends.length; i++) {
               person = {};
               person.username = friends[i].username;
+              person.realname = friends[i].realname;
               person.latitude = friends[i].latitude;
               person.longitude = friends[i].longitude;
               person.status = friends[i].status;
               person.picture = friends[i].picture;
-              sendData.friends.push(person); 
+              sendData.getFriends.push(person); 
             }
             res.json(sendData);
           }
@@ -216,15 +219,16 @@ module.exports = function(app, passport) {
             res.json({"status": 304});
           } else {
             console.log('friends of friends', fof);
-            sendData = {"status": 200, "friendsOfFriends": []};
+            sendData = {"status": 200, "getFriendsOfFriends": []};
             for(var i=0; i < fof.length; i++) {
               person = {};
               person.username = fof[i].username;
+              person.realname = fof[i].realname;
               person.latitude = fof[i].latitude;
               person.longitude = fof[i].longitude;
               person.status = fof[i].status;
               person.picture = fof[i].picture;
-              sendData.friendsOfFriends.push(person); 
+              sendData.getFriendsOfFriends.push(person); 
             }
             res.json(sendData);
           }
@@ -254,6 +258,7 @@ module.exports = function(app, passport) {
               if(friends[i].status == data.status && geolib.getDistance({latitude: data.latitude, longitude: data.longitude}, {latitude: friends[i].latitude, longitude:friends[i].longitude}) <= data.distance) {
                 person = {};
                 person.username = friends[i].username;
+                person.realname = friends[i].realname;
                 person.picture = friends[i].picture;
                 person.latitude = friends[i].latitude;
                 person.longitude = friends[i].longitude;
@@ -270,6 +275,7 @@ module.exports = function(app, passport) {
                   if(fof[i].status == data.status && geolib.getDistance({latitude: data.latitude, longitude:data.longitude}, {latitude:fof[i].latitude, longitude:fof[i].longitude})<= data.distance) {
                     person = {};
                     person.username = fof[i].username;
+                    person.realname = fof[i].realname;
                     person.picture = fof[i].picture;
                     person.latitude = fof[i].latitude;
                     person.longitude = fof[i].longitude;
@@ -283,5 +289,62 @@ module.exports = function(app, passport) {
         });
       }
     }) 
+  });
+
+  // Update user information
+  app.post('/api/updateStatus', function(req, res){
+    var data = req.body;
+    var query = {username: data.username};
+    var update_query = {status: data.status};
+    var options = {new: false};
+    User.findOneAndUpdate(query, update_query, options, function(err, user){
+      if(err) {
+        console.log(err);
+        res.json({"status": 404});
+      } else {
+        res.json({"status": 200});
+      }
+    });
+  });
+
+  app.post('/api/updateLocation', function(req, res){
+    var data = req.body;
+    var query = {username: data.username};
+    var update_query = {latitude: data.latitude, longitude: data.longitude};
+    var options = {new: false};
+    User.findOneAndUpdate(query, update_query, options, function(err, user){
+      if(err) {
+        console.log(err);
+        res.json({"status": 404});
+      } else {
+        res.json({"status": 200});
+      }
+    });
+  });
+
+  app.post('/api/updatePicture', function(req, res){
+    var data = req.body;
+    var query = {username: data.username};
+    var update_query = {picture: data.picture};
+    var options = {new: false};
+    User.findOneAndUpdate(query, update_query, options, function(err, user){
+      if(err) {
+        console.log(err);
+        res.json({"status": 404});
+      } else {
+        res.json({"status": 200});
+      }
+    });
+  });
+
+  // Chatroom related function
+  app.post('/api/generateRoom', function(req, res){
+    var data = req.body;
+    var host = data.username;
+    var invite = eval(data.invite);
+    for(var i=0; i<invite.length; i++) {
+      console.log(invite[i]);
+    }
+    res.json({'status': 200});
   });
 };
