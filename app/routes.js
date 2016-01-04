@@ -1,6 +1,7 @@
 var User = require('./models/user.js');
 var Chatroom = require('./models/chatroom.js');
 var geolib = require('geolib');
+var bcrypt = require('bcrypt-nodejs');
 
 module.exports = function(app, passport, client) {
   
@@ -337,14 +338,121 @@ module.exports = function(app, passport, client) {
     });
   });
 
+  // Chatroom APIs  
+  app.post('/api/getChatrooms', function(req, res){
+    var data = req.body;
+    var username = data.username;
+    User.findOne({username: username}, function(err,user){
+      if(err) {
+        res.json({"status": 500});
+      } else if(!user) {
+        res.json({"status": 404});
+      } else {
+        var subscription = user.subscription;
+        var list = [];
+        function asyncLoop(i, cb) {
+          if(i < subscription.length) {
+            var query = {hash: subscription[i]};
+            console.log(query);
+            Chatroom.findOne(query, function(err, room){
+              if(err) {
+                console.log(err);
+              } else if(!room) {
+                console.log("Not found");
+              } else {
+                var info = {hash: room.hash, users: room.users};
+                list.push(info); 
+                asyncLoop(i+1, cb);
+              }
+            });
+          } else {
+            console.log(list);
+            cb();
+          }
+        }
+
+        asyncLoop(0, function() {
+          res.json({"status":200, "getChatrooms": list});
+        });
+      }
+    });
+  });
+
   // Chatroom related function
-  app.post('/api/generateRoom', function(req, res){
+  app.post('/api/inviteChatroom', function(req, res){
     var data = req.body;
     var host = data.username;
+    var hostRealname = data.realname;
     var invite = eval(data.invite);
+    var hashString = invite.toString() + "," + host + "," + Date.now;
+    var hash = bcrypt.hashSync(hashString, bcrypt.genSaltSync(8));
     for(var i=0; i<invite.length; i++) {
-      console.log(invite[i]);
+      var destination = '/queue/' + invite[i];
+      client.send(destination, {username: invite[i], host: host, hostname: hostRealname, hash: hash, title: data.title}, "Invite");
     }
-    res.json({'status': 200});
+    res.json({'status': 200, 'hash': hash});
+  });
+
+  app.post('/api/acceptInvite', function(req, res){
+    var data = req.body;
+    var username = data.username;
+    var hash = data.hash;
+    var query = {hash: hash};
+
+    Chatroom.findOne(query, function(err, room) {
+      if(err) {
+        res.json({"status": 500});
+      } else if(!room) {
+        var newRoom = new Chatroom();
+        newRoom.title = data.title; 
+        newRoom.hash = data.hash;
+        newRoom.users.push(username);
+        newRoom.save(function(err) {
+        });
+      
+        User.findOneAndUpdate({username: username}, {$push: {subscription: hash}}, {safe:true, upsert:true},function(err, user){
+          if(err) {
+            res.json({"status": 500});
+          }
+        });
+
+        res.json({"status": 200});
+      } else {
+        room.users.push(username);
+        room.save(function(err) {
+        });
+        
+        User.findOneAndUpdate({username: username}, {$push: {subscription: hash}}, {safe:true, upsert:true}, function(err, user){
+          if(err) {
+            res.json({"status": 500});
+          }
+        });
+        res.json({"status": 200});
+      }
+    });
+  });
+
+  app.post('/api/exitChatroom', function(req, res){
+    var data = req.body;
+    var username = data.username;
+    var hash = data.hash;
+    User.findOneAndUpdate({username:username}, {$pull: {subscription: hash}}, {safe:true, upsert:true}, function(err, user){
+      if(err) {
+        res.json({'status': 500});
+      } else if(!user) {
+        res.json({'status': 404});
+      } else {
+        Chatroom.findOneAndUpdate({'hash':hash}, {$pull: {users:username}}, {safe:true, upsert:true}, function(err, chat){
+          if(err) {
+            console.log(err);
+            res.json({'status': 500});
+          } else if(!chat) {
+            res.json({'status': 404});
+          } else {
+            res.json({'status': 200});
+          }
+        });
+      }
+    });
   });
 };

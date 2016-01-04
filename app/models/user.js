@@ -19,7 +19,7 @@ var userSchema = new Schema({
   latitude: Number,
   longitude: Number,
   status: Number,
-  subscription: [chatroomSchema]
+  subscription: [String]
 }, {collection: 'nfdb_test'});
 
 userSchema.plugin(friendOfFriends.plugin, options);
