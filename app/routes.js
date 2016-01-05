@@ -13,6 +13,13 @@ module.exports = function(app, passport, client) {
     res.json({'status': 404});
   });
 
+  app.post('/stompTest', function(req, res) {
+    var data = req.body;
+    var destination = "/queue/" + data.username;
+    client.send(destination, {action:"test", test: "testVal", arrayTest: ["elem1", "elem2"]}, "Message Sent");
+    res.json({"status": 200});
+  });
+
   app.post('/login', function(req, res, next) {
     passport.authenticate('local-login', function(err, user, info){
       if(err) {console.log(err); return res.json({"status": 500});} // internal service error
@@ -59,6 +66,9 @@ module.exports = function(app, passport, client) {
                 res.json({"status": 304}); // request has been done before.
               } else {
                 console.log('request', request);
+                var destination = "/queue/" + data.request_username;
+                var message = data.username + "is sent a friend request " + data.request_username; 
+                client.send(destination, {'action': 'requestFriendRequest', 'username': data.username, 'realname': user.realname, 'picture': user.picture}, message);
                 res.json({"status": 200});
               }
             });
@@ -388,7 +398,8 @@ module.exports = function(app, passport, client) {
     var hash = bcrypt.hashSync(hashString, bcrypt.genSaltSync(8));
     for(var i=0; i<invite.length; i++) {
       var destination = '/queue/' + invite[i];
-      client.send(destination, {username: invite[i], host: host, hostname: hostRealname, hash: hash, title: data.title}, "Invite");
+      var message = host + " invites " + invite[i];
+      client.send(destination, {'action': 'inviteChatroom', 'username': host, 'realname': hostRealname, 'hash': hash}, message);
     }
     res.json({'status': 200, 'hash': hash});
   });
